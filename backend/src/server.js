@@ -44,7 +44,7 @@ wss.on('connection', (ws, req) => {
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 const allowedOrigins = [
   'http://localhost:3000',
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null,
 ].filter(Boolean);
 
 app.use(
@@ -52,7 +52,8 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.some((o) => origin.startsWith(o))) {
+      const cleanOrigin = origin.replace(/\/$/, '');
+      if (allowedOrigins.includes(cleanOrigin)) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked: ${origin}`));
