@@ -61,7 +61,11 @@ export default function DashboardPage() {
 
   const handleEditSubmit = async (formData: any) => {
     if (!editTask) return;
-    await updateTask.mutateAsync({ id: editTask.id, ...formData });
+    const payload = {
+      ...formData,
+      due_date: formData.due_date === '' ? null : formData.due_date,
+    };
+    await updateTask.mutateAsync({ id: editTask.id, ...payload });
     setEditTask(null);
   };
 

@@ -218,7 +218,13 @@ router.patch(
     body('description').optional().trim().isLength({ max: 5000 }),
     body('status').optional().isIn(['todo', 'in_progress', 'done']),
     body('priority').optional().isIn(['low', 'medium', 'high']),
-    body('due_date').optional({ nullable: true }).isISO8601().withMessage('Invalid date format'),
+    body('due_date')
+      .optional({ nullable: true })
+      .custom((val) => {
+        if (val === '' || val === null || val === undefined) return true;
+        if (!/^\d{4}-\d{2}-\d{2}/.test(val)) throw new Error('Invalid date format');
+        return true;
+      }),
   ],
   validate,
   async (req, res, next) => {
@@ -244,13 +250,15 @@ router.patch(
 
       for (const field of allowed) {
         if (req.body[field] !== undefined) {
+          // Treat empty string due_date as null
+          const value = field === 'due_date' && req.body[field] === '' ? null : req.body[field];
           updates.push(`${field} = $${idx++}`);
-          values.push(req.body[field]);
+          values.push(value);
 
-          if (task[field] !== req.body[field]) {
+          if (task[field] !== value) {
             await logActivity(
               client, task.id, req.user.id, 'updated',
-              field, task[field], req.body[field]
+              field, task[field], value
             );
           }
         }
